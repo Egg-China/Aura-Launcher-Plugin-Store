@@ -2,6 +2,7 @@ $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent $PSScriptRoot
 $validator = Join-Path $PSScriptRoot 'validate-store.ps1'
+$powerShell = (Get-Process -Id $PID).Path
 $temporary = Join-Path ([System.IO.Path]::GetTempPath()) `
     ('aura-store-validator-test-' + [guid]::NewGuid().ToString('N'))
 [void](New-Item -ItemType Directory -Path $temporary)
@@ -97,7 +98,7 @@ function Invoke-Validator([string]$Registry, [string]$Manifest) {
     $previousPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'
     try {
-        $output = & powershell.exe -NoProfile -File $validator `
+        $output = & $powerShell -NoProfile -File $validator `
             -Registry $Registry -Manifests $Manifest 2>&1 | Out-String
         $exitCode = $LASTEXITCODE
     } finally {

@@ -9,6 +9,7 @@ $ErrorActionPreference = 'Stop'
 $idPattern = '^[A-Za-z0-9][A-Za-z0-9._-]{1,127}$'
 $shaPattern = '^[0-9a-f]{64}$'
 $versionPattern = '^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$'
+$powerShell = (Get-Process -Id $PID).Path
 $supportedPlatforms = @(
     'windows-x64', 'windows-arm64', 'linux-x64',
     'linux-arm64', 'macos-x64', 'macos-arm64'
@@ -178,7 +179,7 @@ function Assert-RemotePackages([object]$Manifest, [string]$ManifestPath, [string
                 "Package SHA-256 mismatch for $($Manifest.id) $($version.version) $($download.platform)"
             Assert-Condition ($file.Length -eq [int64]$download.size) `
                 "Package size mismatch for $($Manifest.id) $($version.version) $($download.platform)"
-            & powershell.exe -NoProfile -File $script:NplValidator `
+            & $script:powerShell -NoProfile -File $script:NplValidator `
                 -Package $packagePath -StoreManifest $ManifestPath
             Assert-Condition ($LASTEXITCODE -eq 0) `
                 "NPL validation failed for $($Manifest.id) $($version.version) $($download.platform)"
