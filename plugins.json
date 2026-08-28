@@ -27,6 +27,29 @@
         "hooks",
         "native"
       ]
+    },
+    {
+      "id": "dev.hmclce.runtime.dotnet-host",
+      "name": "Aura .NET Runtime Host",
+      "author": "Aura Launcher Community",
+      "description": "Isolated .NET 10 runtime provider for schema-v5 plugins.",
+      "manifestUrl": "https://raw.githubusercontent.com/Egg-China/Aura-DotNet-Runtime-Host/main/manifest.json",
+      "manifestSha256": "74b6dd3495d45e5a527c460184056cb9e09b1bccdeb5517ed98b0543953dd044",
+      "repository": "https://github.com/Egg-China/Aura-DotNet-Runtime-Host",
+      "homepage": "https://github.com/Egg-China/Aura-DotNet-Runtime-Host",
+      "category": "runtime",
+      "tags": [
+        "aura-launcher",
+        "dotnet",
+        "runtime"
+      ],
+      "capabilities": [
+        "runtime-provider",
+        "isolated",
+        "bridge",
+        "hooks",
+        "native"
+      ]
     }
   ]
 }
