@@ -163,3 +163,5 @@ try {
     }
     Remove-Item -LiteralPath $resolvedTemporary -Recurse -Force
 }
+
+$global:LASTEXITCODE = 0
