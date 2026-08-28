@@ -1,7 +1,32 @@
 {
   "schemaVersion": 1,
-  "name": "HMCL Nex Plugin Store Registry",
-  "description": "HMCL Nex 插件商店列表",
-  "homepageUrl": "https://github.com/PCL-Nex-Developer/HMCL-Nex-Plugin-Store",
-  "plugins": []
+  "name": "Aura Launcher Plugin Store",
+  "description": "Official Aura Launcher plugin registry.",
+  "homepageUrl": "https://github.com/Egg-China/Aura-Launcher-Plugin-Store",
+  "plugins": [
+    {
+      "id": "dev.hmclce.runtime.rust-host",
+      "name": "Aura Rust Runtime Host",
+      "author": "HMCL CE Community",
+      "description": "Optional embedded and isolated Rust runtime provider for schema-v5 plugins.",
+      "manifestUrl": "https://raw.githubusercontent.com/Egg-China/Aura-Rust-Runtime-Host/main/manifest.json",
+      "manifestSha256": "53e01377bbd21bcd37aa0623711eb6fec5bcd3afe8945a981d4a4534a39c39f9",
+      "repository": "https://github.com/Egg-China/Aura-Rust-Runtime-Host",
+      "homepage": "https://github.com/Egg-China/Aura-Rust-Runtime-Host",
+      "category": "runtime",
+      "tags": [
+        "aura-launcher",
+        "rust",
+        "runtime"
+      ],
+      "capabilities": [
+        "runtime-provider",
+        "embedded",
+        "isolated",
+        "bridge",
+        "hooks",
+        "native"
+      ]
+    }
+  ]
 }

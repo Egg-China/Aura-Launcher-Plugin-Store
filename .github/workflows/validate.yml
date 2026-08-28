@@ -1,14 +1,34 @@
-name: Validate plugin store
+name: Validate Aura plugin store
 
 on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   validate:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - name: Validate registry schemas and security metadata
+      - name: Check out Store
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Check out exact Plugin SDK validator
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          repository: HMCL-Community/HMCL-CE-Plugin-SDK
+          ref: 05d687fb8bd8a9683113c5e4317e9aca2b6d7112
+          path: .ci/sdk
+
+      - name: Test Store validator
         shell: pwsh
-        run: ./tools/validate-store.ps1
+        run: ./tools/test-validate-store.ps1
+
+      - name: Verify public manifests and packages
+        shell: pwsh
+        run: |
+          ./tools/validate-store.ps1 `
+              -VerifyRemote `
+              -NplValidator ./.ci/sdk/tools/validate-npl.ps1
