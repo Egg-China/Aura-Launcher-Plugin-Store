@@ -74,6 +74,30 @@
         "hooks",
         "native"
       ]
+    },
+    {
+      "id": "dev.hmclce.runtime.wasm-host",
+      "name": "Aura Wasm Runtime Host",
+      "author": "Aura Launcher Community",
+      "description": "Isolated Wasmtime Component Model runtime provider for schema-v5 WebAssembly plugins.",
+      "manifestUrl": "https://raw.githubusercontent.com/Egg-China/Aura-Wasm-Runtime-Host/main/manifest.json",
+      "manifestSha256": "a74c9434d64dd479d5d5e8abf48c36dc3b06b5d168b490f278817ae7d6326e92",
+      "repository": "https://github.com/Egg-China/Aura-Wasm-Runtime-Host",
+      "homepage": "https://github.com/Egg-China/Aura-Wasm-Runtime-Host",
+      "category": "runtime",
+      "tags": [
+        "aura-launcher",
+        "wasm",
+        "wasmtime",
+        "runtime"
+      ],
+      "capabilities": [
+        "runtime-provider",
+        "isolated",
+        "bridge",
+        "hooks",
+        "native"
+      ]
     }
   ]
 }
