@@ -50,6 +50,30 @@
         "hooks",
         "native"
       ]
+    },
+    {
+      "id": "dev.hmclce.runtime.quickjs-host",
+      "name": "Aura QuickJS Runtime Host",
+      "author": "Aura Launcher Community",
+      "description": "Isolated QuickJS-NG runtime provider for schema-v5 JavaScript plugins.",
+      "manifestUrl": "https://raw.githubusercontent.com/Egg-China/Aura-QuickJS-Runtime-Host/main/manifest.json",
+      "manifestSha256": "58e8b9363bdbb478ea8aea39bf1d04ece734568e3e1aab28d71798ef4d0b7798",
+      "repository": "https://github.com/Egg-China/Aura-QuickJS-Runtime-Host",
+      "homepage": "https://github.com/Egg-China/Aura-QuickJS-Runtime-Host",
+      "category": "runtime",
+      "tags": [
+        "aura-launcher",
+        "javascript",
+        "quickjs",
+        "runtime"
+      ],
+      "capabilities": [
+        "runtime-provider",
+        "isolated",
+        "bridge",
+        "hooks",
+        "native"
+      ]
     }
   ]
 }
