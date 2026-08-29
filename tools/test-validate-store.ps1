@@ -118,6 +118,7 @@ function New-SigningFixture([string]$Name) {
         signed = [ordered]@{
             _type = 'root'
             schemaVersion = 1
+            version = 1
             expires = '2036-08-29T00:00:00Z'
             statusUrl = ''
             keys = $keys

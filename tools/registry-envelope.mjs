@@ -291,6 +291,7 @@ function parseOfficialKeys(root) {
   const signed = root.signed;
   if (signed === null || typeof signed !== 'object' || Array.isArray(signed)
       || signed._type !== 'root' || signed.schemaVersion !== 1
+      || !Number.isSafeInteger(signed.version) || signed.version <= 0
       || typeof signed.expires !== 'string' || typeof signed.statusUrl !== 'string') {
     throw new Error('Unsupported trust root');
   }

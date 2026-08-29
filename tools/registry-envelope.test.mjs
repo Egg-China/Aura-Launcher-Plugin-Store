@@ -26,6 +26,7 @@ function signingFixture() {
     signed: {
       _type: 'root',
       schemaVersion: 1,
+      version: 1,
       expires: '2036-08-29T00:00:00Z',
       statusUrl: '',
       keys: {
@@ -129,6 +130,10 @@ test('rejects malformed or unauthorized trust roots', () => {
   const { privateDer, id, root } = signingFixture();
   const envelopeText = JSON.stringify(createEnvelope(REGISTRY, privateDer.toString('base64')));
   const mutations = [
+    (value) => { delete value.signed.version; },
+    (value) => { value.signed.version = 0; },
+    (value) => { value.signed.version = -1; },
+    (value) => { value.signed.version = 1.5; },
     (value) => { value.signed.keys[id].keyType = 'rsa'; },
     (value) => { value.signed.keys[id].scheme = 'rsa'; },
     (value) => { value.signed.keys[id].publicKey = 'not base64'; },
