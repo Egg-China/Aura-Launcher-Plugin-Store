@@ -1,0 +1,24 @@
+{
+  "signed": {
+    "_type": "root",
+    "schemaVersion": 1,
+    "expires": "2036-08-29T00:00:00Z",
+    "statusUrl": "",
+    "keys": {
+      "ed25519:de163aa6543ee105b58c18a5185d5a73a5c0408e27fa76fe3ae5cfe6d933904f": {
+        "keyType": "ed25519",
+        "scheme": "ed25519",
+        "publicKey": "MCowBQYDK2VwAyEA8QJ5511uBdap5fxyfhkhr/fkXA2D9WuON5D3hjQnJrw="
+      }
+    },
+    "roles": {
+      "official-repository": {
+        "keyIds": [
+          "ed25519:de163aa6543ee105b58c18a5185d5a73a5c0408e27fa76fe3ae5cfe6d933904f"
+        ],
+        "threshold": 1
+      }
+    }
+  },
+  "signatures": []
+}

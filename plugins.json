@@ -1,0 +1,111 @@
+{
+  "signed": {
+    "schemaVersion": 1,
+    "name": "Aura Launcher Plugin Store",
+    "description": "Official Aura Launcher plugin registry.",
+    "homepageUrl": "https://github.com/Egg-China/Aura-Launcher-Plugin-Store",
+    "plugins": [
+      {
+        "id": "dev.hmclce.runtime.rust-host",
+        "name": "Aura Rust Runtime Host",
+        "author": "Aura Launcher Community",
+        "description": "Optional embedded and isolated Rust runtime provider for schema-v5 plugins.",
+        "manifestUrl": "https://raw.githubusercontent.com/Egg-China/Aura-Rust-Runtime-Host/main/manifest.json",
+        "manifestSha256": "264e3d1ec20ff3f43b6212dcaf7d9d1458ce7779bb6f0aed4a746c14808f7a26",
+        "repository": "https://github.com/Egg-China/Aura-Rust-Runtime-Host",
+        "homepage": "https://github.com/Egg-China/Aura-Rust-Runtime-Host",
+        "category": "runtime",
+        "tags": [
+          "aura-launcher",
+          "rust",
+          "runtime"
+        ],
+        "capabilities": [
+          "runtime-provider",
+          "embedded",
+          "isolated",
+          "bridge",
+          "hooks",
+          "native"
+        ]
+      },
+      {
+        "id": "dev.hmclce.runtime.dotnet-host",
+        "name": "Aura .NET Runtime Host",
+        "author": "Aura Launcher Community",
+        "description": "Isolated .NET 10 runtime provider for schema-v5 plugins.",
+        "manifestUrl": "https://raw.githubusercontent.com/Egg-China/Aura-DotNet-Runtime-Host/main/manifest.json",
+        "manifestSha256": "74b6dd3495d45e5a527c460184056cb9e09b1bccdeb5517ed98b0543953dd044",
+        "repository": "https://github.com/Egg-China/Aura-DotNet-Runtime-Host",
+        "homepage": "https://github.com/Egg-China/Aura-DotNet-Runtime-Host",
+        "category": "runtime",
+        "tags": [
+          "aura-launcher",
+          "dotnet",
+          "runtime"
+        ],
+        "capabilities": [
+          "runtime-provider",
+          "isolated",
+          "bridge",
+          "hooks",
+          "native"
+        ]
+      },
+      {
+        "id": "dev.hmclce.runtime.quickjs-host",
+        "name": "Aura QuickJS Runtime Host",
+        "author": "Aura Launcher Community",
+        "description": "Isolated QuickJS-NG runtime provider for schema-v5 JavaScript plugins.",
+        "manifestUrl": "https://raw.githubusercontent.com/Egg-China/Aura-QuickJS-Runtime-Host/main/manifest.json",
+        "manifestSha256": "58e8b9363bdbb478ea8aea39bf1d04ece734568e3e1aab28d71798ef4d0b7798",
+        "repository": "https://github.com/Egg-China/Aura-QuickJS-Runtime-Host",
+        "homepage": "https://github.com/Egg-China/Aura-QuickJS-Runtime-Host",
+        "category": "runtime",
+        "tags": [
+          "aura-launcher",
+          "javascript",
+          "quickjs",
+          "runtime"
+        ],
+        "capabilities": [
+          "runtime-provider",
+          "isolated",
+          "bridge",
+          "hooks",
+          "native"
+        ]
+      },
+      {
+        "id": "dev.hmclce.runtime.wasm-host",
+        "name": "Aura Wasm Runtime Host",
+        "author": "Aura Launcher Community",
+        "description": "Isolated Wasmtime Component Model runtime provider for schema-v5 WebAssembly plugins.",
+        "manifestUrl": "https://raw.githubusercontent.com/Egg-China/Aura-Wasm-Runtime-Host/main/manifest.json",
+        "manifestSha256": "a74c9434d64dd479d5d5e8abf48c36dc3b06b5d168b490f278817ae7d6326e92",
+        "repository": "https://github.com/Egg-China/Aura-Wasm-Runtime-Host",
+        "homepage": "https://github.com/Egg-China/Aura-Wasm-Runtime-Host",
+        "category": "runtime",
+        "tags": [
+          "aura-launcher",
+          "wasm",
+          "wasmtime",
+          "runtime"
+        ],
+        "capabilities": [
+          "runtime-provider",
+          "isolated",
+          "bridge",
+          "hooks",
+          "native"
+        ]
+      }
+    ]
+  },
+  "signatures": [
+    {
+      "keyId": "ed25519:de163aa6543ee105b58c18a5185d5a73a5c0408e27fa76fe3ae5cfe6d933904f",
+      "signature": "UDuPUSoPlgaUxz4kAwWK7VGVm7etzzGk1G05msfebmvpmTNdwI7XcCVOADJVn69cQVOO+klg5YtNcABKWi3ZDw=="
+    }
+  ]
+}
