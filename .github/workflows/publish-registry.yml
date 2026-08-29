@@ -1,0 +1,103 @@
+name: Publish signed Aura plugin registry
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'registry.json'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tools/registry-envelope.mjs'
+      - 'tools/validate-store.ps1'
+      - 'trust/aura-plugin-root.json'
+      - '.github/workflows/publish-registry.yml'
+      - '!plugins.json'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: official-registry-publication
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out Store
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install signer dependencies
+        run: npm ci
+
+      - name: Test strict registry signer
+        run: npm test
+
+      - name: Validate reviewed registry source
+        shell: pwsh
+        run: ./tools/validate-store.ps1 -Registry ./registry.json -UnsignedPayload
+
+      - name: Check out exact Plugin SDK validator
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          repository: HMCL-Community/HMCL-CE-Plugin-SDK
+          ref: 05d687fb8bd8a9683113c5e4317e9aca2b6d7112
+          path: .ci/sdk
+
+      - name: Sign official registry
+        shell: pwsh
+        env:
+          PRODUCTION_SIGNING_KEY: ${{ secrets.AURA_OFFICIAL_REGISTRY_SIGNING_KEY_PKCS8_BASE64 }}
+        run: |
+          $privateKeyPath = Join-Path $env:RUNNER_TEMP 'aura-official-registry-signing-key.txt'
+          try {
+              [System.IO.File]::WriteAllText(
+                  $privateKeyPath,
+                  $env:PRODUCTION_SIGNING_KEY,
+                  [System.Text.Encoding]::ASCII
+              )
+              $env:AURA_OFFICIAL_REGISTRY_SIGNING_KEY_FILE = $privateKeyPath
+              node ./tools/registry-envelope.mjs sign `
+                  --registry ./registry.json `
+                  --output ./plugins.json
+              if ($LASTEXITCODE -ne 0) { throw 'Registry signing failed' }
+          } finally {
+              $env:AURA_OFFICIAL_REGISTRY_SIGNING_KEY_FILE = $null
+              if (Test-Path -LiteralPath $privateKeyPath -PathType Leaf) {
+                  Remove-Item -LiteralPath $privateKeyPath -Force
+              }
+          }
+
+      - name: Verify generated registry envelope
+        run: |
+          node ./tools/registry-envelope.mjs verify \
+            --envelope ./plugins.json \
+            --root ./trust/aura-plugin-root.json
+
+      - name: Validate all published bytes
+        shell: pwsh
+        run: |
+          ./tools/validate-store.ps1 `
+              -Registry ./plugins.json `
+              -TrustRoot ./trust/aura-plugin-root.json `
+              -VerifyRemote `
+              -NplValidator ./.ci/sdk/tools/validate-npl.ps1
+
+      - name: Commit generated registry envelope
+        shell: bash
+        run: |
+          if git diff --quiet -- plugins.json; then
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- plugins.json
+          git commit -m 'chore: publish signed plugin registry'
+          git push
