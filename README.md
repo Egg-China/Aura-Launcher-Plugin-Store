@@ -27,7 +27,7 @@ Each source entry includes an exact manifest pin:
 
 ## Runtime Hosts
 
-Schema-v5 Runtime Providers publish a Store schema-v2 manifest. Each version uses `artifacts[]` instead of version-level `packageUrl`, `sha256`, and `size`. Official Runtime Hosts publish exactly these targets:
+Schema-v5 Runtime Providers publish a Store schema-v2 manifest. Each version uses `artifacts[]` instead of version-level `packageUrl`, `sha256`, and `size`. Official Runtime Hosts must publish these six targets:
 
 - `windows-x64`
 - `windows-arm64`
@@ -35,6 +35,10 @@ Schema-v5 Runtime Providers publish a Store schema-v2 manifest. Each version use
 - `linux-arm64`
 - `macos-x64`
 - `macos-arm64`
+
+They may additionally publish the experimental `harmonyos-arm64` target. The version `platforms` set and artifact matrix must contain the same targets; all six baseline targets remain required. No other HarmonyOS architecture is accepted.
+
+On a HarmonyOS PC ARM64 host, Aura Launcher prefers an exact `harmonyos-arm64` artifact and otherwise may select `linux-arm64`. This compatibility is one-way: HarmonyOS artifacts never match Linux. HarmonyOS PC uses a Linux kernel, so Linux ARM64 artifacts may work in principle, but Aura Launcher, JavaFX, Minecraft, and the published Runtime Hosts have not been tested on real HarmonyOS PC hardware.
 
 The Store manifest must match every package's schema-v5 `plugin.json`, including runtime, ABI, platforms, Provider declarations, permissions, launcher constraint, and dependencies.
 

@@ -41,7 +41,7 @@ jobs:
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           repository: HMCL-Community/HMCL-CE-Plugin-SDK
-          ref: 05d687fb8bd8a9683113c5e4317e9aca2b6d7112
+          ref: 6f170a32b2a7fcc7d750e2190631e60913d31199
           path: .ci/sdk
 
       - name: Test Store validator

@@ -221,6 +221,32 @@ try {
     Assert-Succeeds (Invoke-Validator $registryPath $manifestPath -UnsignedPayload) `
         'valid runtime Provider'
 
+    $withHarmony = New-Manifest
+    $withHarmony.versions[0].platforms += 'harmonyos-arm64'
+    $withHarmony.versions[0].artifacts += New-Artifact 'harmonyos-arm64'
+    Write-JsonFile $manifestPath $withHarmony
+    Write-Registry $registryPath $manifestPath
+    Assert-Succeeds (Invoke-Validator $registryPath $manifestPath -UnsignedPayload) `
+        'runtime Provider with optional HarmonyOS artifact'
+
+    $missingRequired = New-Manifest
+    $missingRequired.versions[0].platforms = @($missingRequired.versions[0].platforms |
+        Where-Object { $_ -cne 'linux-arm64' })
+    $missingRequired.versions[0].artifacts = @($missingRequired.versions[0].artifacts |
+        Where-Object { $_.platform -cne 'linux-arm64' })
+    Write-JsonFile $manifestPath $missingRequired
+    Write-Registry $registryPath $manifestPath
+    Assert-Fails (Invoke-Validator $registryPath $manifestPath -UnsignedPayload) `
+        'missing required Aura platform: linux-arm64' 'missing required Linux ARM64 artifact'
+
+    $unknownHarmony = New-Manifest
+    $unknownHarmony.versions[0].artifacts += New-Artifact 'harmonyos-x64'
+    Write-JsonFile $manifestPath $unknownHarmony
+    Write-Registry $registryPath $manifestPath
+    Assert-Fails (Invoke-Validator $registryPath $manifestPath -UnsignedPayload) `
+        'unsupported artifact platform: harmonyos-x64' 'unknown HarmonyOS architecture'
+
+    Write-JsonFile $manifestPath (New-Manifest)
     Write-Registry $registryPath $manifestPath $false
     Assert-Fails (Invoke-Validator $registryPath $manifestPath -UnsignedPayload) `
         'manifestSha256' 'missing manifest digest'

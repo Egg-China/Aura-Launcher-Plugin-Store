@@ -13,10 +13,12 @@ $shaPattern = '^[0-9a-f]{64}$'
 $versionPattern = '^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$'
 $powerShell = (Get-Process -Id $PID).Path
 $envelopeTool = Join-Path $PSScriptRoot 'registry-envelope.mjs'
-$supportedPlatforms = @(
+$requiredPlatforms = @(
     'windows-x64', 'windows-arm64', 'linux-x64',
     'linux-arm64', 'macos-x64', 'macos-arm64'
 )
+$optionalPlatforms = @('harmonyos-arm64')
+$supportedPlatforms = @($requiredPlatforms + $optionalPlatforms)
 
 function Assert-Condition([bool]$Condition, [string]$Message) {
     if (-not $Condition) { throw $Message }
@@ -112,9 +114,15 @@ function Assert-RuntimeProviderVersion([object]$Version, [string]$ManifestId) {
         "$ManifestId $versionName runtime Provider must use embedded bootstrap execution"
 
     Assert-StringArray $Version.platforms "$ManifestId $versionName platforms" $false
-    Assert-Condition ((Compare-Object ($supportedPlatforms | Sort-Object) `
-            (@($Version.platforms) | Sort-Object)).Count -eq 0) `
-        "$ManifestId $versionName must declare the exact six Aura platforms"
+    $versionPlatforms = @($Version.platforms)
+    foreach ($platform in $versionPlatforms) {
+        Assert-Condition ([string]$platform -cin $supportedPlatforms) `
+            "$ManifestId $versionName has unsupported platform: $platform"
+    }
+    foreach ($requiredPlatform in $requiredPlatforms) {
+        Assert-Condition ($requiredPlatform -cin $versionPlatforms) `
+            "$ManifestId $versionName is missing required Aura platform: $requiredPlatform"
+    }
     Assert-StringArray $Version.permissions "$ManifestId $versionName permissions"
     Assert-StringArray $Version.requiredPermissions "$ManifestId $versionName requiredPermissions"
     foreach ($required in @($Version.requiredPermissions)) {
@@ -148,16 +156,17 @@ function Assert-RuntimeProviderVersion([object]$Version, [string]$ManifestId) {
             -and -not (Has-Property $Version 'size')) `
         "$ManifestId $versionName cannot combine artifacts with packageUrl, sha256, or size"
     $artifacts = @($Version.artifacts)
-    Assert-Condition ($artifacts.Count -eq 6) "$ManifestId $versionName must publish exactly six artifacts"
     $artifactPlatforms = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
     foreach ($artifact in $artifacts) {
         Assert-Artifact $artifact $ManifestId $versionName
         Assert-Condition ($artifactPlatforms.Add([string]$artifact.platform)) `
             "Duplicate artifact platform for $ManifestId ${versionName}: $($artifact.platform)"
     }
-    Assert-Condition ((Compare-Object ($supportedPlatforms | Sort-Object) `
+    Assert-Condition ($artifacts.Count -eq $versionPlatforms.Count) `
+        "$ManifestId $versionName artifact count must match declared platforms"
+    Assert-Condition ((Compare-Object ($versionPlatforms | Sort-Object) `
             (@($artifactPlatforms) | Sort-Object)).Count -eq 0) `
-        "$ManifestId $versionName artifact matrix must contain the exact six Aura platforms"
+        "$ManifestId $versionName artifact matrix must match declared platforms"
 }
 
 function Assert-Manifest([object]$Manifest, [string]$ManifestPath) {
