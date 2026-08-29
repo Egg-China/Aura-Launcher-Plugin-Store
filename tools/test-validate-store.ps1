@@ -159,8 +159,9 @@ function Invoke-Validator(
             $arguments += @('-TrustRoot', $TrustRoot)
         }
         if ($UnsignedPayload) { $arguments += '-UnsignedPayload' }
-        $output = & $powerShell @arguments 2>&1 | Out-String
+        $outputRecords = @(& $powerShell @arguments 2>&1)
         $exitCode = $LASTEXITCODE
+        $output = ($outputRecords | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine
     } finally {
         $ErrorActionPreference = $previousPreference
     }
@@ -177,17 +178,19 @@ function Assert-Fails([object]$Result, [string]$Expected, [string]$Case) {
     if ($Result.ExitCode -eq 0) {
         throw "$Case should fail"
     }
-    $normalizedOutput = [regex]::Replace([string]$Result.Output, '\s+', ' ')
-    $normalizedExpected = [regex]::Replace($Expected, '\s+', ' ')
-    if (-not $normalizedOutput.Contains($normalizedExpected)) {
+    if (-not $Result.Output.Contains($Expected)) {
         throw "$Case failed without expected diagnostic '$Expected': $($Result.Output)"
     }
 }
 
-Assert-Fails ([pscustomobject]@{
-        ExitCode = 1
-        Output = "missing required Aura`nplatform: linux-arm64"
-    }) 'missing required Aura platform: linux-arm64' 'wrapped PowerShell diagnostic'
+function Assert-FailsExactly([object]$Result, [string]$Expected, [string]$Case) {
+    if ($Result.ExitCode -eq 0) {
+        throw "$Case should fail"
+    }
+    if ($Result.Output.Trim() -cne $Expected) {
+        throw "$Case did not emit the exact diagnostic '$Expected': $($Result.Output)"
+    }
+}
 
 try {
     $manifestPath = Join-Path $temporary 'manifest.json'
@@ -243,8 +246,9 @@ try {
         Where-Object { $_.platform -cne 'linux-arm64' })
     Write-JsonFile $manifestPath $missingRequired
     Write-Registry $registryPath $manifestPath
-    Assert-Fails (Invoke-Validator $registryPath $manifestPath -UnsignedPayload) `
-        'missing required Aura platform: linux-arm64' 'missing required Linux ARM64 artifact'
+    Assert-FailsExactly (Invoke-Validator $registryPath $manifestPath -UnsignedPayload) `
+        'dev.hmclce.runtime.test-host 0.1.0-beta.1 is missing required Aura platform: linux-arm64' `
+        'missing required Linux ARM64 artifact'
 
     $unknownHarmony = New-Manifest
     $unknownHarmony.versions[0].artifacts += New-Artifact 'harmonyos-x64'

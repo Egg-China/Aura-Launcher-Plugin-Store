@@ -8,6 +8,11 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+trap {
+    [Console]::Error.WriteLine($_.Exception.Message)
+    exit 1
+}
+
 $idPattern = '^[A-Za-z0-9][A-Za-z0-9._-]{1,127}$'
 $shaPattern = '^[0-9a-f]{64}$'
 $versionPattern = '^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$'
