@@ -177,10 +177,17 @@ function Assert-Fails([object]$Result, [string]$Expected, [string]$Case) {
     if ($Result.ExitCode -eq 0) {
         throw "$Case should fail"
     }
-    if (-not $Result.Output.Contains($Expected)) {
+    $normalizedOutput = [regex]::Replace([string]$Result.Output, '\s+', ' ')
+    $normalizedExpected = [regex]::Replace($Expected, '\s+', ' ')
+    if (-not $normalizedOutput.Contains($normalizedExpected)) {
         throw "$Case failed without expected diagnostic '$Expected': $($Result.Output)"
     }
 }
+
+Assert-Fails ([pscustomobject]@{
+        ExitCode = 1
+        Output = "missing required Aura`nplatform: linux-arm64"
+    }) 'missing required Aura platform: linux-arm64' 'wrapped PowerShell diagnostic'
 
 try {
     $manifestPath = Join-Path $temporary 'manifest.json'
