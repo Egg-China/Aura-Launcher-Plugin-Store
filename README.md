@@ -68,6 +68,8 @@ Only HTTPS URLs are accepted outside loopback development. Temporary workflow ar
 
 Production signing reads PKCS#8 Base64 only from the `AURA_OFFICIAL_REGISTRY_SIGNING_KEY_PKCS8_BASE64` repository secret. Local ephemeral signing may instead set `AURA_OFFICIAL_REGISTRY_SIGNING_KEY_FILE` to a protected temporary file. Private key bytes must never be passed as a command argument, committed, logged, stored in a repository variable, or uploaded as an artifact.
 
+On Windows, provision the repository secret from a protected temporary dotenv file with `gh secret set --env-file`. Do not pipe the key through the Windows PowerShell 5 native-command text pipeline, because its encoding boundary can alter the exact Base64 bytes. Delete the temporary dotenv and key files after the remote signing workflow succeeds.
+
 The public X.509 SPKI key and its `ed25519:<sha256>` key ID are committed in `trust/aura-plugin-root.json`. This public root is also supplied to Aura Launcher builds through `AURA_PLUGIN_ROOT_JSON`.
 
 Key rotation follows this order:

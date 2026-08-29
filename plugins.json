@@ -104,8 +104,8 @@
   },
   "signatures": [
     {
-      "keyId": "ed25519:de163aa6543ee105b58c18a5185d5a73a5c0408e27fa76fe3ae5cfe6d933904f",
-      "signature": "UDuPUSoPlgaUxz4kAwWK7VGVm7etzzGk1G05msfebmvpmTNdwI7XcCVOADJVn69cQVOO+klg5YtNcABKWi3ZDw=="
+      "keyId": "ed25519:da5dfc5447c3dc21c625da2073b2926b1967bbeef142c424912fdd32196cd9f2",
+      "signature": "YVYY3jc1GMgegTV5bbqBvT+fEN8sMBpB7jCudHedNw7g5oY0nw+IYbN7aMdKyAeTleCDvDR1Sy9JA3cetdovCQ=="
     }
   ]
 }

@@ -5,16 +5,16 @@
     "expires": "2036-08-29T00:00:00Z",
     "statusUrl": "",
     "keys": {
-      "ed25519:de163aa6543ee105b58c18a5185d5a73a5c0408e27fa76fe3ae5cfe6d933904f": {
+      "ed25519:da5dfc5447c3dc21c625da2073b2926b1967bbeef142c424912fdd32196cd9f2": {
         "keyType": "ed25519",
         "scheme": "ed25519",
-        "publicKey": "MCowBQYDK2VwAyEA8QJ5511uBdap5fxyfhkhr/fkXA2D9WuON5D3hjQnJrw="
+        "publicKey": "MCowBQYDK2VwAyEA0zh/NxGbyhx2l5J2WgBBak93mPRQoVEcSOLLMxvg5MI="
       }
     },
     "roles": {
       "official-repository": {
         "keyIds": [
-          "ed25519:de163aa6543ee105b58c18a5185d5a73a5c0408e27fa76fe3ae5cfe6d933904f"
+          "ed25519:da5dfc5447c3dc21c625da2073b2926b1967bbeef142c424912fdd32196cd9f2"
         ],
         "threshold": 1
       }
