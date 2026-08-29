@@ -7,7 +7,7 @@
     {
       "id": "dev.hmclce.runtime.rust-host",
       "name": "Aura Rust Runtime Host",
-      "author": "HMCL CE Community",
+      "author": "Aura Launcher Community",
       "description": "Optional embedded and isolated Rust runtime provider for schema-v5 plugins.",
       "manifestUrl": "https://raw.githubusercontent.com/Egg-China/Aura-Rust-Runtime-Host/main/manifest.json",
       "manifestSha256": "264e3d1ec20ff3f43b6212dcaf7d9d1458ce7779bb6f0aed4a746c14808f7a26",

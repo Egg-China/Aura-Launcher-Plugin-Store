@@ -2,6 +2,7 @@ $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent $PSScriptRoot
 $validator = Join-Path $PSScriptRoot 'validate-store.ps1'
+$envelopeTool = Join-Path $PSScriptRoot 'registry-envelope.mjs'
 $powerShell = (Get-Process -Id $PID).Path
 $temporary = Join-Path ([System.IO.Path]::GetTempPath()) `
     ('aura-store-validator-test-' + [guid]::NewGuid().ToString('N'))
@@ -94,12 +95,71 @@ function Write-Registry([string]$Path, [string]$ManifestPath, [bool]$IncludeHash
     })
 }
 
-function Invoke-Validator([string]$Registry, [string]$Manifest) {
+function New-SigningFixture([string]$Name) {
+    $privatePath = Join-Path $temporary "$Name-private.txt"
+    $publicPath = Join-Path $temporary "$Name-public.json"
+    $rootPath = Join-Path $temporary "$Name-root.json"
+    & node $envelopeTool generate-key --private-output $privatePath --public-output $publicPath
+    if ($LASTEXITCODE -ne 0) { throw "Failed to generate $Name test signing key" }
+
+    $public = Get-Content -LiteralPath $publicPath -Raw | ConvertFrom-Json
+    $keys = [ordered]@{}
+    $keys[[string]$public.keyId] = [ordered]@{
+        keyType = 'ed25519'
+        scheme = 'ed25519'
+        publicKey = [string]$public.publicKey
+    }
+    $roles = [ordered]@{}
+    $roles['official-repository'] = [ordered]@{
+        keyIds = @([string]$public.keyId)
+        threshold = 1
+    }
+    Write-JsonFile $rootPath ([ordered]@{
+        signed = [ordered]@{
+            _type = 'root'
+            schemaVersion = 1
+            expires = '2036-08-29T00:00:00Z'
+            statusUrl = ''
+            keys = $keys
+            roles = $roles
+        }
+        signatures = @()
+    })
+    return [pscustomobject]@{
+        PrivatePath = $privatePath
+        RootPath = $rootPath
+    }
+}
+
+function Sign-Registry([string]$Registry, [string]$PrivateKey, [string]$Output) {
+    $previousKey = $env:AURA_OFFICIAL_REGISTRY_SIGNING_KEY_PKCS8_BASE64
+    $previousFile = $env:AURA_OFFICIAL_REGISTRY_SIGNING_KEY_FILE
+    try {
+        $env:AURA_OFFICIAL_REGISTRY_SIGNING_KEY_PKCS8_BASE64 = $null
+        $env:AURA_OFFICIAL_REGISTRY_SIGNING_KEY_FILE = $PrivateKey
+        & node $envelopeTool sign --registry $Registry --output $Output
+        if ($LASTEXITCODE -ne 0) { throw 'Failed to sign test registry' }
+    } finally {
+        $env:AURA_OFFICIAL_REGISTRY_SIGNING_KEY_PKCS8_BASE64 = $previousKey
+        $env:AURA_OFFICIAL_REGISTRY_SIGNING_KEY_FILE = $previousFile
+    }
+}
+
+function Invoke-Validator(
+    [string]$Registry,
+    [string]$Manifest,
+    [string]$TrustRoot = '',
+    [switch]$UnsignedPayload
+) {
     $previousPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'
     try {
-        $output = & $powerShell -NoProfile -File $validator `
-            -Registry $Registry -Manifests $Manifest 2>&1 | Out-String
+        $arguments = @('-NoProfile', '-File', $validator, '-Registry', $Registry, '-Manifests', $Manifest)
+        if (-not [string]::IsNullOrWhiteSpace($TrustRoot)) {
+            $arguments += @('-TrustRoot', $TrustRoot)
+        }
+        if ($UnsignedPayload) { $arguments += '-UnsignedPayload' }
+        $output = & $powerShell @arguments 2>&1 | Out-String
         $exitCode = $LASTEXITCODE
     } finally {
         $ErrorActionPreference = $previousPreference
@@ -124,19 +184,50 @@ function Assert-Fails([object]$Result, [string]$Expected, [string]$Case) {
 
 try {
     $manifestPath = Join-Path $temporary 'manifest.json'
-    $registryPath = Join-Path $temporary 'plugins.json'
+    $registryPath = Join-Path $temporary 'registry.json'
+    $envelopePath = Join-Path $temporary 'plugins.json'
 
     Write-JsonFile $manifestPath (New-Manifest)
     Write-Registry $registryPath $manifestPath
-    Assert-Succeeds (Invoke-Validator $registryPath $manifestPath) 'valid runtime Provider'
+    $signer = New-SigningFixture 'official'
+    $wrongSigner = New-SigningFixture 'wrong'
+    Sign-Registry $registryPath $signer.PrivatePath $envelopePath
+
+    Assert-Fails (Invoke-Validator $registryPath $manifestPath $signer.RootPath) `
+        'Registry envelope' 'plain official registry'
+    Assert-Succeeds (Invoke-Validator $envelopePath $manifestPath $signer.RootPath) `
+        'signed official registry'
+    Assert-Succeeds (Invoke-Validator $registryPath $manifestPath -UnsignedPayload) `
+        'reviewed unsigned payload'
+    Assert-Fails (Invoke-Validator $envelopePath $manifestPath $wrongSigner.RootPath) `
+        'not authorized' 'wrong trust root'
+
+    $changedEnvelope = Get-Content -LiteralPath $envelopePath -Raw | ConvertFrom-Json
+    $changedEnvelope.signed.name = 'Mutated Store'
+    Write-JsonFile $envelopePath $changedEnvelope
+    Assert-Fails (Invoke-Validator $envelopePath $manifestPath $signer.RootPath) `
+        'signature is invalid' 'changed signed payload'
+
+    Sign-Registry $registryPath $signer.PrivatePath $envelopePath
+    $changedEnvelope = Get-Content -LiteralPath $envelopePath -Raw | ConvertFrom-Json
+    $signature = [string]$changedEnvelope.signatures[0].signature
+    $replacement = if ($signature[0] -ceq 'A') { 'B' } else { 'A' }
+    $changedEnvelope.signatures[0].signature = $replacement + $signature.Substring(1)
+    Write-JsonFile $envelopePath $changedEnvelope
+    Assert-Fails (Invoke-Validator $envelopePath $manifestPath $signer.RootPath) `
+        'signature is invalid' 'changed registry signature'
+
+    Write-Registry $registryPath $manifestPath
+    Assert-Succeeds (Invoke-Validator $registryPath $manifestPath -UnsignedPayload) `
+        'valid runtime Provider'
 
     Write-Registry $registryPath $manifestPath $false
-    Assert-Fails (Invoke-Validator $registryPath $manifestPath) `
+    Assert-Fails (Invoke-Validator $registryPath $manifestPath -UnsignedPayload) `
         'manifestSha256' 'missing manifest digest'
 
     Write-Registry $registryPath $manifestPath
     Add-Content -LiteralPath $manifestPath -Value ' '
-    Assert-Fails (Invoke-Validator $registryPath $manifestPath) `
+    Assert-Fails (Invoke-Validator $registryPath $manifestPath -UnsignedPayload) `
         'SHA-256 mismatch' 'changed manifest bytes'
 
     $mixed = New-Manifest
@@ -144,14 +235,14 @@ try {
         -NotePropertyValue 'https://example.test/legacy.npl'
     Write-JsonFile $manifestPath $mixed
     Write-Registry $registryPath $manifestPath
-    Assert-Fails (Invoke-Validator $registryPath $manifestPath) `
+    Assert-Fails (Invoke-Validator $registryPath $manifestPath -UnsignedPayload) `
         'cannot combine' 'mixed artifact representations'
 
     $duplicate = New-Manifest
     $duplicate.versions[0].artifacts[1].platform = 'windows-x64'
     Write-JsonFile $manifestPath $duplicate
     Write-Registry $registryPath $manifestPath
-    Assert-Fails (Invoke-Validator $registryPath $manifestPath) `
+    Assert-Fails (Invoke-Validator $registryPath $manifestPath -UnsignedPayload) `
         'Duplicate artifact platform' 'duplicate artifact platform'
 
     Write-Host 'Aura Store validator tests passed.'

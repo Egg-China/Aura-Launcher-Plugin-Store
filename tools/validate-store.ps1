@@ -1,5 +1,7 @@
 param(
     [string]$Registry = (Join-Path (Split-Path -Parent $PSScriptRoot) 'plugins.json'),
+    [string]$TrustRoot = '',
+    [switch]$UnsignedPayload,
     [string[]]$Manifests = @(),
     [switch]$VerifyRemote,
     [string]$NplValidator = ''
@@ -10,6 +12,7 @@ $idPattern = '^[A-Za-z0-9][A-Za-z0-9._-]{1,127}$'
 $shaPattern = '^[0-9a-f]{64}$'
 $versionPattern = '^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$'
 $powerShell = (Get-Process -Id $PID).Path
+$envelopeTool = Join-Path $PSScriptRoot 'registry-envelope.mjs'
 $supportedPlatforms = @(
     'windows-x64', 'windows-arm64', 'linux-x64',
     'linux-arm64', 'macos-x64', 'macos-arm64'
@@ -43,6 +46,43 @@ function Assert-StringArray([object]$Value, [string]$Field, [bool]$AllowEmpty = 
 
 function Get-LowerSha256([string]$Path) {
     return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+}
+
+function Remove-ValidatedTemporaryDirectory([string]$Path) {
+    $resolvedTemporary = [System.IO.Path]::GetFullPath($Path)
+    $resolvedSystemTemporary = [System.IO.Path]::GetFullPath([System.IO.Path]::GetTempPath())
+    Assert-Condition ($resolvedTemporary.StartsWith(
+            $resolvedSystemTemporary,
+            [System.StringComparison]::OrdinalIgnoreCase
+        )) "Refusing to remove non-temporary path: $resolvedTemporary"
+    Remove-Item -LiteralPath $resolvedTemporary -Recurse -Force
+}
+
+function Read-RegistryPayload([string]$Path, [string]$RootPath, [bool]$AllowUnsigned) {
+    if ($AllowUnsigned) {
+        Assert-Condition ([string]::IsNullOrWhiteSpace($RootPath)) `
+            '-TrustRoot cannot be combined with -UnsignedPayload'
+        return Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json
+    }
+
+    Assert-Condition (-not [string]::IsNullOrWhiteSpace($RootPath)) `
+        'Signed official registry validation requires -TrustRoot'
+    $resolvedRoot = (Resolve-Path -LiteralPath $RootPath).Path
+    $temporary = Join-Path ([System.IO.Path]::GetTempPath()) `
+        ('aura-store-envelope-validation-' + [guid]::NewGuid().ToString('N'))
+    [void](New-Item -ItemType Directory -Path $temporary)
+    try {
+        $payloadPath = Join-Path $temporary 'registry.json'
+        $verificationOutput = & node $envelopeTool extract `
+            --envelope $Path --root $resolvedRoot --output $payloadPath 2>&1 | Out-String
+        Assert-Condition ($LASTEXITCODE -eq 0) `
+            "Official registry envelope verification failed: $verificationOutput"
+        Assert-Condition (Test-Path -LiteralPath $payloadPath -PathType Leaf) `
+            'Official registry verifier did not produce a payload'
+        return Get-Content -LiteralPath $payloadPath -Raw | ConvertFrom-Json
+    } finally {
+        Remove-ValidatedTemporaryDirectory $temporary
+    }
 }
 
 function Assert-Artifact([object]$Artifact, [string]$ManifestId, [string]$Version) {
@@ -188,11 +228,11 @@ function Assert-RemotePackages([object]$Manifest, [string]$ManifestPath, [string
 }
 
 $registryPath = (Resolve-Path -LiteralPath $Registry).Path
-$registryJson = Get-Content -LiteralPath $registryPath -Raw | ConvertFrom-Json
-Assert-Condition ([int]$registryJson.schemaVersion -eq 1) 'plugins.json schemaVersion must be 1'
+$registryJson = Read-RegistryPayload $registryPath $TrustRoot $UnsignedPayload.IsPresent
+Assert-Condition ([int]$registryJson.schemaVersion -eq 1) 'Aura registry schemaVersion must be 1'
 Assert-Condition (-not [string]::IsNullOrWhiteSpace([string]$registryJson.name)) `
-    'plugins.json name is required'
-Assert-Condition (Has-Property $registryJson 'plugins') 'plugins.json plugins array is required'
+    'Aura registry name is required'
+Assert-Condition (Has-Property $registryJson 'plugins') 'Aura registry plugins array is required'
 $entriesById = @{}
 $ids = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
 foreach ($plugin in @($registryJson.plugins)) {
@@ -211,7 +251,7 @@ foreach ($manifestSource in $Manifests) {
     $manifestPath = (Resolve-Path -LiteralPath $manifestSource).Path
     $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
     Assert-Condition ($entriesById.ContainsKey([string]$manifest.id)) `
-        "$manifestPath is not indexed by plugins.json"
+        "$manifestPath is not indexed by the Aura registry"
     $entry = $entriesById[[string]$manifest.id]
     Assert-ManifestPin $entry $manifestPath
     Assert-Manifest $manifest $manifestPath
@@ -238,13 +278,7 @@ if ($VerifyRemote) {
             Assert-RemotePackages $manifest $manifestPath $pluginRoot
         }
     } finally {
-        $resolvedTemporary = [System.IO.Path]::GetFullPath($temporary)
-        $resolvedSystemTemporary = [System.IO.Path]::GetFullPath([System.IO.Path]::GetTempPath())
-        Assert-Condition ($resolvedTemporary.StartsWith(
-                $resolvedSystemTemporary,
-                [System.StringComparison]::OrdinalIgnoreCase
-            )) "Refusing to remove non-temporary path: $resolvedTemporary"
-        Remove-Item -LiteralPath $resolvedTemporary -Recurse -Force
+        Remove-ValidatedTemporaryDirectory $temporary
     }
 }
 
